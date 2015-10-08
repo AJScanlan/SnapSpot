@@ -2,15 +2,18 @@ package com.ajscanlan.snapspot;
 
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.net.Uri;
+import android.provider.MediaStore;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -28,13 +31,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap;
     static HashMap<String, Integer> hashMap = new HashMap<>();
+    static final int REQUEST_IMAGE_CAPTURE = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
+        //Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -118,9 +122,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         return bmp;
     }
 
+    private Bitmap resourceToBitmap(Bitmap bmp){
+        //Bitmap.Config conf = Bitmap.Config.ARGB_8888;
+        Bitmap tempBitmap = Bitmap.createScaledBitmap(bmp,200,200,true);
+        Canvas canvas1 = new Canvas(tempBitmap);
+
+        // paint defines the text color,
+        // stroke width, size
+        Paint color = new Paint();
+        color.setTextSize(35);
+        color.setColor(Color.BLACK);
+
+        //modify canvas
+        canvas1.drawBitmap(tempBitmap, 0, 0, color);
+
+        return tempBitmap;
+    }
+
     @Override
     public boolean onMarkerClick(Marker marker) {
-
         Log.d("HASHMAP", "in method " + marker.getId());
         Log.d("HASHMAP", "in method " + hashMap.get(marker.getId()));
 
@@ -136,5 +156,30 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onFragmentInteraction(Uri uri) {
 
+    }
+
+    public void openCamera(View view) {
+
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+        }
+
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+
+            Bundle extras = data.getExtras();
+            Bitmap imageBitmap = (Bitmap) extras.get("data");
+            imageBitmap = resourceToBitmap(imageBitmap);
+
+            mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(0, 0))
+                    .icon(BitmapDescriptorFactory.fromBitmap(imageBitmap)));
+
+        }
     }
 }
