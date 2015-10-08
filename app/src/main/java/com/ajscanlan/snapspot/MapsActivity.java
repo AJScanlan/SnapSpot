@@ -1,7 +1,6 @@
 package com.ajscanlan.snapspot;
 
-import android.app.FragmentManager;
-import android.app.FragmentTransaction;
+import android.content.ContextWrapper;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -9,14 +8,15 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.net.Uri;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
@@ -25,13 +25,25 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener, ImageFragment.OnFragmentInteractionListener{
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener, ImageFragment.OnFragmentInteractionListener {
 
     private GoogleMap mMap;
     static HashMap<String, Integer> hashMap = new HashMap<>();
     static final int REQUEST_IMAGE_CAPTURE = 1;
+    private ArrayList<File> files = new ArrayList<>();
+    private String mCurrentPhotoPath;
+    private Bitmap bitmap;
+    private ImageView mImageView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,18 +54,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        //mImageView = (ImageView) findViewById(R.id.test);
     }
 
-
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
@@ -104,9 +108,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
-    private Bitmap resourceToBitmap(int resource){
+    private Bitmap resourceToBitmap(int resource) {
         //Bitmap.Config conf = Bitmap.Config.ARGB_8888;
-        Bitmap bmp = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), resource),200,200,true);
+        Bitmap bmp = Bitmap.createScaledBitmap(BitmapFactory.decodeResource(getResources(), resource), 200, 200, true);
         Canvas canvas1 = new Canvas(bmp);
 
         // paint defines the text color,
@@ -122,9 +126,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         return bmp;
     }
 
-    private Bitmap resourceToBitmap(Bitmap bmp){
+    private Bitmap bitmapToScaledBitmap(Bitmap bmp) {
         //Bitmap.Config conf = Bitmap.Config.ARGB_8888;
-        Bitmap tempBitmap = Bitmap.createScaledBitmap(bmp,200,200,true);
+        Bitmap tempBitmap = Bitmap.createScaledBitmap(bmp, 200, 200, true);
         Canvas canvas1 = new Canvas(tempBitmap);
 
         // paint defines the text color,
@@ -158,28 +162,65 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+    private File createImageFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.UK).format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        //File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+        Log.d("LOG_MESSAGE", timeStamp == null ? "null" : timeStamp);
+        Log.d("LOG_MESSAGE", imageFileName == null ? "null" : imageFileName);
+        Log.d("LOG_MESSAGE", storageDir== null ? "null" : storageDir.toString());
+
+        File image = File.createTempFile(
+                imageFileName,  /* prefix */
+                ".jpg",         /* suffix */
+                storageDir      /* directory */
+        );
+
+        // Save a file: path for use with ACTION_VIEW intents
+        mCurrentPhotoPath = image.getAbsolutePath();
+        Log.d("LOG_MESSAGE", image == null ? "null" : image.toString());
+        Log.d("LOG_MESSAGE", mCurrentPhotoPath == null ? "null" : mCurrentPhotoPath);
+        return image;
+    }
+
     public void openCamera(View view) {
-
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-
+        // Ensure that there's a camera activity to handle the intent
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+            // Create the File where the photo should go
+            File photoFile = null;
+            try {
+                photoFile = createImageFile();
+            } catch (IOException ex) {
+                // Error occurred while creating the File
+                Log.d("LOG_MESSAGE", "exception");
+                ex.printStackTrace();
+            }
+            // Continue only if the File was successfully created
+            Log.d("LOG_MESSAGE", photoFile == null ? "null" : "not null");
+            if (photoFile != null) {
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(photoFile));
+                startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+            }
         }
-
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+            //Bundle extras = data.getExtras();
+//            Bitmap imageBitmap = (Bitmap) extras.get("data");
+//            mImageView.setImageBitmap(imageBitmap);
 
-            Bundle extras = data.getExtras();
-            Bitmap imageBitmap = (Bitmap) extras.get("data");
-            imageBitmap = resourceToBitmap(imageBitmap);
+            //File file = new File(mCurrentPhotoPath);
 
-            mMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(0, 0))
-                    .icon(BitmapDescriptorFactory.fromBitmap(imageBitmap)));
+            //Bitmap bmp = BitmapFactory.decodeFile(mCurrentPhotoPath);
 
+           // mImageView.setImageBitmap(bmp);
+
+            //if(data == null) Toast.makeText(getApplicationContext(), "NULL", Toast.LENGTH_SHORT).show();
         }
     }
 }

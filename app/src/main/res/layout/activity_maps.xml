@@ -20,4 +20,9 @@
         android:text="Open Camera"
         android:onClick="openCamera"/>
 
+    <!--<ImageView-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:id="@+id/test"/>-->
+
 </LinearLayout>
