@@ -1,6 +1,8 @@
 package com.ajscanlan.snapspot;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
@@ -131,6 +133,9 @@ public class ImageFragment extends Fragment {
         if(imageView == null) Log.d("HASHMAP", "IN FRAGMENT, IMAGEVIEW NULL");
 
 //        Log.d("HASHMAP", "IN FRAGMENT" + MapsActivity.hashMap.get(id).toString());
-        imageView.setImageResource(MapsActivity.hashMap.get(id));
+        //imageView.setImageResource(MapsActivity.hashMap.get(id));
+        Bitmap bmp = BitmapFactory.decodeFile(MapsActivity.hashMap.get(id));
+        Log.d("HASHMAP", bmp == null ? "null" : "not null");
+        imageView.setImageBitmap(bmp);
     }
 }

@@ -34,11 +34,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Random;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener, ImageFragment.OnFragmentInteractionListener {
 
     private GoogleMap mMap;
-    static HashMap<String, Integer> hashMap = new HashMap<>();
+    static HashMap<String, String> hashMap = new HashMap<>();
     static final int REQUEST_IMAGE_CAPTURE = 1;
     private ArrayList<File> files = new ArrayList<>();
     private String mCurrentPhotoPath;
@@ -63,48 +64,48 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap = googleMap;
         mMap.setOnMarkerClickListener(this);
 
-        //Convert resource to bitmap
-        Bitmap bmp1 = resourceToBitmap(R.drawable.test2);
-        Bitmap bmp2 = resourceToBitmap(R.drawable.test3);
-        Bitmap bmp3 = resourceToBitmap(R.drawable.test4);
-        Bitmap bmp4 = resourceToBitmap(R.drawable.test5);
-
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        LatLng paris = new LatLng(48, 2.3);
-        LatLng newYork = new LatLng(40, -73);
-        LatLng brazil = new LatLng(-15, -47);
-
-        Marker marker1 = mMap.addMarker(new MarkerOptions()
-                .position(sydney)
-                .title("Marker in Sydney")
-                .icon(BitmapDescriptorFactory.fromBitmap(bmp1)));
-
-        hashMap.put(marker1.getId(), R.drawable.test2);
-        //Log.d("HASHMAP", hashMap.get(marker1.getId()).toString());
-
-        Marker marker2 = mMap.addMarker(new MarkerOptions()
-                .position(paris)
-                .title("Marker in Paris")
-                .icon(BitmapDescriptorFactory.fromBitmap(bmp2)));
-        hashMap.put(marker2.getId(), R.drawable.test3);
-
-        Marker marker3 = mMap.addMarker(new MarkerOptions()
-                .position(newYork)
-                .title("Marker in New York")
-                .icon(BitmapDescriptorFactory.fromBitmap(bmp3)));
-        hashMap.put(marker3.getId(), R.drawable.test4);
-
-        Marker marker4 = mMap.addMarker(new MarkerOptions()
-                .position(brazil)
-                .title("Marker in Brazil")
-                .icon(BitmapDescriptorFactory.fromBitmap(bmp4)));
-        hashMap.put(marker4.getId(), R.drawable.test5);
-        //mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
-
-
-        Log.d("HASHMAP", "m0 " + marker1.getId());
-        Log.d("HASHMAP", "2130837640 " + hashMap.get(marker1.getId()));
+//        //Convert resource to bitmap
+//        Bitmap bmp1 = resourceToBitmap(R.drawable.test2);
+//        Bitmap bmp2 = resourceToBitmap(R.drawable.test3);
+//        Bitmap bmp3 = resourceToBitmap(R.drawable.test4);
+//        Bitmap bmp4 = resourceToBitmap(R.drawable.test5);
+//
+//        // Add a marker in Sydney and move the camera
+//        LatLng sydney = new LatLng(-34, 151);
+//        LatLng paris = new LatLng(48, 2.3);
+//        LatLng newYork = new LatLng(40, -73);
+//        LatLng brazil = new LatLng(-15, -47);
+//
+//        Marker marker1 = mMap.addMarker(new MarkerOptions()
+//                .position(sydney)
+//                .title("Marker in Sydney")
+//                .icon(BitmapDescriptorFactory.fromBitmap(bmp1)));
+//
+//        hashMap.put(marker1.getId(), R.drawable.test2);
+//        //Log.d("HASHMAP", hashMap.get(marker1.getId()).toString());
+//
+//        Marker marker2 = mMap.addMarker(new MarkerOptions()
+//                .position(paris)
+//                .title("Marker in Paris")
+//                .icon(BitmapDescriptorFactory.fromBitmap(bmp2)));
+//        hashMap.put(marker2.getId(), R.drawable.test3);
+//
+//        Marker marker3 = mMap.addMarker(new MarkerOptions()
+//                .position(newYork)
+//                .title("Marker in New York")
+//                .icon(BitmapDescriptorFactory.fromBitmap(bmp3)));
+//        hashMap.put(marker3.getId(), R.drawable.test4);
+//
+//        Marker marker4 = mMap.addMarker(new MarkerOptions()
+//                .position(brazil)
+//                .title("Marker in Brazil")
+//                .icon(BitmapDescriptorFactory.fromBitmap(bmp4)));
+//        hashMap.put(marker4.getId(), R.drawable.test5);
+//        //mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+//
+//
+//        Log.d("HASHMAP", "m0 " + marker1.getId());
+//        Log.d("HASHMAP", "2130837640 " + hashMap.get(marker1.getId()));
 
     }
 
@@ -221,6 +222,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
            // mImageView.setImageBitmap(bmp);
 
             //if(data == null) Toast.makeText(getApplicationContext(), "NULL", Toast.LENGTH_SHORT).show();
+            Random randy = new Random();
+
+            double randLat = -90.0 + (90.0 - (-90.0)) * randy.nextDouble();
+            double randLng = -180.0 + (180.0 - (-180.0)) * randy.nextDouble();
+
+            Log.d("LAT", "Lat is :" + randLat);
+            Log.d("LNG", "Lng is :" + randLng);
+
+            addMarker(randLat, randLng, mCurrentPhotoPath);
         }
     }
+
+    private void addMarker(double lat, double lng, String path){
+        Bitmap bmp = BitmapFactory.decodeFile(path);
+        bmp = bitmapToScaledBitmap(bmp);
+
+        Marker marker = mMap.addMarker(new MarkerOptions()
+                .position(new LatLng(lat, lng))
+                .icon(BitmapDescriptorFactory.fromBitmap(bmp)));
+        hashMap.put(marker.getId(),path);
+    }
+
 }
