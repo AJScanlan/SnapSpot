@@ -85,9 +85,9 @@ public class ImageFragment extends Fragment {
     }
 
     // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
+    public void onButtonPressed() {
         if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
+            mListener.onFragmentInteraction();
         }
     }
 
@@ -104,7 +104,10 @@ public class ImageFragment extends Fragment {
 
     @Override
     public void onDetach() {
+        Log.d("LISTENER", "in onDetach");
+
         super.onDetach();
+        mListener.onFragmentInteraction();
         mListener = null;
     }
 
@@ -120,7 +123,7 @@ public class ImageFragment extends Fragment {
      */
     public interface OnFragmentInteractionListener {
         // TODO: Update argument type and name
-        public void onFragmentInteraction(Uri uri);
+        public void onFragmentInteraction();
     }
 
     @Override

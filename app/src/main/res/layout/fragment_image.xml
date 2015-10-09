@@ -2,7 +2,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.ajscanlan.snapspot.ImageFragment">
+    tools:context="com.ajscanlan.snapspot.ImageFragment"
+    android:background="@android:color/black">
 
     <!-- TODO: Update blank fragment layout -->
 

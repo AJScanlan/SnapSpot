@@ -1,4 +1,5 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/main_activity_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
@@ -9,15 +10,20 @@
         android:name="com.google.android.gms.maps.SupportMapFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_weight="3"
-        tools:context=".MapsActivity" />
+        tools:context=".MapsActivity">
 
-    <Button
-        android:id="@+id/open_camera_camera"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_weight="0"
-        android:text="@string/open_camera"
-        android:onClick="openCamera"/>
+        <Button
+            android:id="@+id/open_camera_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:onClick="openCamera"
+            android:text="@string/open_camera"
+            android:layout_gravity="bottom"/>
+
+    </fragment>
+
 
 </LinearLayout>
+
+    <!--android:layout_weight="0"        android:layout_weight="1"
+    -->
