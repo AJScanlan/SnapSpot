@@ -12,6 +12,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import com.ajscanlan.snapspot.model.Image;
+
 
 /**
  * A simple {@link Fragment} subclass.
@@ -25,21 +27,20 @@ public class ImageFragment extends Fragment {
 
     private String id;
     private static ImageView imageView;
+    private Image mImage;
 
 
     private OnFragmentInteractionListener mListener;
 
     // TODO: Rename and change types and number of parameters
-    public static ImageFragment newInstance(String id) {
+    public static ImageFragment newInstance(Image image) {
         ImageFragment fragment = new ImageFragment();
 
         Bundle args = new Bundle();
         fragment.setArguments(args);
 
-        fragment.id = id;
-
-        Log.d("HASHMAP", "IN FRAGMENT " + fragment.id);
-        Log.d("HASHMAP", "IN FRAGMENT " + MapsActivity.hashMap.get(fragment.id));
+        //fragment.id = id;
+        fragment.mImage = image;
 
         if(imageView == null) Log.d("HASHMAP", "IN FRAGMENT, IMAGEVIEW NULL");
 
@@ -94,6 +95,9 @@ public class ImageFragment extends Fragment {
         super.onDetach();
         mListener.onFragmentInteraction();
         mListener = null;
+        //imageView.setImageBitmap(null);
+        imageView = null;
+        mImage = null;
     }
 
     /**
@@ -115,15 +119,9 @@ public class ImageFragment extends Fragment {
     public void onStart(){
         super.onStart();
 
-        Log.d("HASHMAP", "IN START" + id);
-        Log.d("HASHMAP", "IN START" + MapsActivity.hashMap.get(id));
-
         if(imageView == null) Log.d("HASHMAP", "IN FRAGMENT, IMAGEVIEW NULL");
 
-//        Log.d("HASHMAP", "IN FRAGMENT" + MapsActivity.hashMap.get(id).toString());
-        //imageView.setImageResource(MapsActivity.hashMap.get(id));
-        Bitmap bmp = BitmapFactory.decodeFile(MapsActivity.hashMap.get(id));
-        Log.d("HASHMAP", bmp == null ? "null" : "not null");
-        imageView.setImageBitmap(bmp);
+        Log.d("HASHMAP", mImage == null ? "null" : "not null");
+        imageView.setImageBitmap(mImage.getBitmap());
     }
 }

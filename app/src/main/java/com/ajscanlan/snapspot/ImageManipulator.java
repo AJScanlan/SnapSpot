@@ -7,10 +7,12 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.media.ExifInterface;
+import android.media.ThumbnailUtils;
 import android.os.Environment;
 import android.util.Log;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -54,19 +56,22 @@ public class ImageManipulator {
     static Bitmap bitmapToScaledBitmap(Bitmap bmp) {
 
         //Bitmap.Config conf = Bitmap.Config.ARGB_8888;
-        Bitmap tempBitmap = Bitmap.createScaledBitmap(bmp, 128, 128, true);
-        Canvas canvas1 = new Canvas(tempBitmap);
+        //Bitmap tempBitmap = Bitmap.createScaledBitmap(bmp, 200, 200, true);
 
-        // paint defines the text color,
-        // stroke width, size
-        Paint color = new Paint();
-        color.setTextSize(35);
-        color.setColor(Color.BLACK);
+        return ThumbnailUtils.extractThumbnail(bmp, 150, 150);
 
-        //modify canvas
-        canvas1.drawBitmap(tempBitmap, 0, 0, color);
-
-        return tempBitmap;
+//        Canvas canvas1 = new Canvas(tempBitmap);
+//
+//        // paint defines the text color,
+//        // stroke width, size
+//        Paint color = new Paint();
+//        color.setTextSize(35);
+//        color.setColor(Color.BLACK);
+//
+//        //modify canvas
+//        canvas1.drawBitmap(tempBitmap, 0, 0, color);
+//
+//        return tempBitmap;
     }
 
     static Bitmap rotateBitmapFromFile(String filePath){
@@ -107,7 +112,7 @@ public class ImageManipulator {
 
         try {
             fOut = new FileOutputStream(filePath);
-            rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 85, fOut);
+            rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 10, fOut);
             fOut.flush();
             fOut.close();
         } catch (IOException e1) {
@@ -128,4 +133,42 @@ public class ImageManipulator {
         return latLngFloat;
     }
 
+
+    static public Bitmap decodeFile(File f) {
+        Bitmap b = null;
+        try {
+            // Decode image size
+            BitmapFactory.Options o = new BitmapFactory.Options();
+            o.inJustDecodeBounds = true;
+
+            FileInputStream fis = new FileInputStream(f);
+            BitmapFactory.decodeStream(fis, null, o);
+            fis.close();
+            int IMAGE_MAX_SIZE = 1000;
+            int scale = 1;
+            if (o.outHeight > IMAGE_MAX_SIZE || o.outWidth > IMAGE_MAX_SIZE) {
+                scale = (int) Math.pow(
+                        2,
+                        (int) Math.round(Math.log(IMAGE_MAX_SIZE
+                                / (double) Math.max(o.outHeight, o.outWidth))
+                                / Math.log(0.5)));
+            }
+
+            // Decode with inSampleSize
+            BitmapFactory.Options o2 = new BitmapFactory.Options();
+            o2.inSampleSize = scale;
+            fis = new FileInputStream(f);
+            b = BitmapFactory.decodeStream(fis, null, o2);
+
+            //Flip the image 90 degrees
+            Matrix matrix = new Matrix();
+            matrix.postRotate(90);
+            b = Bitmap.createBitmap(b , 0, 0, b .getWidth(), b.getHeight(), matrix, true);
+
+            fis.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return b;
+    }
 }

@@ -1,6 +1,7 @@
 package com.ajscanlan.snapspot;
 
 import android.content.Intent;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -10,28 +11,28 @@ import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
 
+import com.ajscanlan.snapspot.model.Image;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.maps.android.clustering.ClusterItem;
+import com.google.maps.android.clustering.ClusterManager;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Random;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMarkerClickListener, ImageFragment.OnFragmentInteractionListener {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,
+        ImageFragment.OnFragmentInteractionListener, ClusterManager.OnClusterItemClickListener {
 
-    private GoogleMap mMap;
-    static HashMap<String, String> hashMap = new HashMap<>();
+    //static HashMap<String, Image> hashMap = new HashMap<>();
     static final int REQUEST_IMAGE_CAPTURE = 1;
+    private static final String TAG = "MAPS_DEBUG_TAG";
+    private GoogleMap mMap;
     private String mCurrentPhotoPath;
+
+    private ClusterManager<Image> mClusterManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,32 +48,39 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        mMap.setOnMarkerClickListener(this);
+        //mMap.setOnMarkerClickListener(this);
         mMap.getUiSettings().setMapToolbarEnabled(false); //removes the buttons on map (NOT COMPASS)
+        setUpClusterer();
     }
 
-    @Override
-    public boolean onMarkerClick(Marker marker) {
-        Log.d("HASHMAP", "in method " + marker.getId());
-        Log.d("HASHMAP", "in method " + hashMap.get(marker.getId()));
-
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.map, ImageFragment.newInstance(marker.getId()))
-                .addToBackStack("")
-                .commit();
-
-        Button cameraButton = (Button) findViewById(R.id.open_camera_button);
-        cameraButton.setVisibility(View.INVISIBLE);
-
-        return false;
-    }
+//    @Override
+//    public boolean onMarkerClick(Marker marker) {
+//        Log.d("HASHMAP", "in method " + marker.getId());
+//        Log.d("HASHMAP", "in method " + hashMap.get(marker.getId()));
+//
+//        Image imageToDisplay = hashMap.get(marker.getId());
+//
+//        getSupportFragmentManager()
+//                .beginTransaction()
+//                .replace(R.id.map, ImageFragment.newInstance(marker.getId(), imageToDisplay))
+//                .addToBackStack("")
+//                .commit();
+//
+//        Button cameraButton = (Button) findViewById(R.id.open_camera_button);
+//        cameraButton.setVisibility(View.INVISIBLE);
+//
+//        return false;
+//    }
 
     @Override
     public void onFragmentInteraction() {
         //Finds the OpenCamera button and places it on fragment
         Button cameraButton = (Button) findViewById(R.id.open_camera_button);
         cameraButton.setVisibility(View.VISIBLE);
+
+        //Finds the demo button and places it on fragment
+        Button demoButton = (Button) findViewById(R.id.demo_button);
+        demoButton.setVisibility(View.VISIBLE);
     }
 
     public void openCamera(View view) {
@@ -104,8 +112,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
 
-
-
 //            Random randy = new Random();
 //
 //            double randLat = -90.0 + (90.0 - (-90.0)) * randy.nextDouble();
@@ -116,21 +122,88 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             try {
                 float[] latLngFloat = ImageManipulator.getLatLngExif(mCurrentPhotoPath);
-                addMarker(latLngFloat[0], latLngFloat[1], mCurrentPhotoPath);
+
+                LatLng mPosition = new LatLng(latLngFloat[0], latLngFloat[1]);
+
+                addMarker(mPosition, mCurrentPhotoPath);
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    private void addMarker(double lat, double lng, String path){
-        Bitmap bmp = ImageManipulator.rotateBitmapFromFile(path);  //BitmapFactory.decodeFile(path);
-        bmp = ImageManipulator.bitmapToScaledBitmap(bmp);
+    private void addMarker(LatLng position, String path) {
+        Bitmap bmp = ImageManipulator.decodeFile(new File(path));
+        //Bitmap bmp = ImageManipulator.rotateBitmapFromFile(path);  //BitmapFactory.decodeFile(path);
+        Bitmap bmpThumb = ImageManipulator.bitmapToScaledBitmap(bmp);
 
-        Marker marker = mMap.addMarker(new MarkerOptions()
-                .position(new LatLng(lat, lng))
-                .icon(BitmapDescriptorFactory.fromBitmap(bmp)));
-        hashMap.put(marker.getId(),path);
+
+//        Marker marker = mMap.addMarker(new MarkerOptions()
+//                .position(position)
+//                .icon(BitmapDescriptorFactory.fromBitmap(bmp)));
+
+        //Constructing image and adding to hashmap with Marker ID as key
+        Image tempImage = new Image(position, bmp, bmpThumb, path);
+        mClusterManager.addItem(tempImage);
+
+        //hashMap.put(marker.getId(),tempImage);
     }
 
+    private void setUpClusterer() {
+
+        // Position the map.
+        //mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(51.503186, -0.126446), 10));
+
+        // Initialize the manager with the context and the map.
+        // (Activity extends context, so we can pass 'this' in the constructor.)
+        mClusterManager = new ClusterManager<>(this, mMap);
+
+        //setup custom renderer
+        mClusterManager.setRenderer(new CustomIconRenderer(getApplicationContext(),
+                mMap, mClusterManager));
+
+        // Point the map's listeners at the listeners implemented by the cluster
+        // manager.
+        mMap.setOnCameraChangeListener(mClusterManager);
+        mClusterManager.setOnClusterItemClickListener(MapsActivity.this);
+        mMap.setOnMarkerClickListener(mClusterManager);
+
+    }
+
+    public boolean onClusterItemClick(ClusterItem clusterItem) {
+
+        Log.d(TAG, "IN onClusterItemClick");
+
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.map, ImageFragment.newInstance((Image) clusterItem))
+                .addToBackStack("")
+                .commit();
+
+        Button cameraButton = (Button) findViewById(R.id.open_camera_button);
+        cameraButton.setVisibility(View.INVISIBLE);
+
+        return false;
+    }
+
+    public void demoClick(View view) {
+
+        Resources res = getApplicationContext().getResources();
+        Bitmap b = BitmapFactory.decodeResource(res, R.mipmap.ic_launcher);
+
+        // Set some lat/lng coordinates to start with.
+        double lat = 51.5145160;
+        double lng = -0.1270060;
+
+        // Add ten cluster items in close proximity, for purposes of this example.
+        for (int i = 0; i < 10; i++) {
+            double offset = i / 60d;
+            lat = lat + offset;
+            lng = lng + offset;
+
+            Image offsetItem = new Image(new LatLng(lat, lng), b, b, null);
+            mClusterManager.addItem(offsetItem);
+        }
+    }
 }
