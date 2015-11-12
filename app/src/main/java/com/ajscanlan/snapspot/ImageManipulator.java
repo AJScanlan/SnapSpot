@@ -27,12 +27,16 @@ public class ImageManipulator {
         // Create an image file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.UK).format(new Date());
         String imageFileName = "JPEG_" + timeStamp + "_";
+
         //File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+
+        //Checking if null for debugging purposes
         Log.d("LOG_MESSAGE", timeStamp == null ? "null" : timeStamp);
         Log.d("LOG_MESSAGE", imageFileName == null ? "null" : imageFileName);
         Log.d("LOG_MESSAGE", storageDir== null ? "null" : storageDir.toString());
 
+        //Creating the file using the strings made above
         File image = File.createTempFile(
                 imageFileName,  /* prefix */
                 ".jpg",         /* suffix */
@@ -42,13 +46,15 @@ public class ImageManipulator {
         // Save a file: path for use with ACTION_VIEW intents
         //mCurrentPhotoPath = image.getAbsolutePath();
         Log.d("LOG_MESSAGE", image == null ? "null" : image.getAbsolutePath());
+
         //Log.d("LOG_MESSAGE", mCurrentPhotoPath == null ? "null" : mCurrentPhotoPath);
         return image;
     }
 
     static Bitmap bitmapToScaledBitmap(Bitmap bmp) {
+
         //Bitmap.Config conf = Bitmap.Config.ARGB_8888;
-        Bitmap tempBitmap = Bitmap.createScaledBitmap(bmp, 200, 200, true);
+        Bitmap tempBitmap = Bitmap.createScaledBitmap(bmp, 128, 128, true);
         Canvas canvas1 = new Canvas(tempBitmap);
 
         // paint defines the text color,
@@ -98,19 +104,28 @@ public class ImageManipulator {
         Bitmap rotatedBitmap = Bitmap.createBitmap(bm, 0, 0, bounds.outWidth, bounds.outHeight, matrix, true);
 
         FileOutputStream fOut;
+
         try {
             fOut = new FileOutputStream(filePath);
             rotatedBitmap.compress(Bitmap.CompressFormat.JPEG, 85, fOut);
             fOut.flush();
             fOut.close();
-        } catch (FileNotFoundException e1) {
+        } catch (IOException e1) {
             // TODO Auto-generated catch block
             e1.printStackTrace();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         }
+
         return rotatedBitmap;
+    }
+
+    static float[] getLatLngExif(String path) throws IOException {
+        ExifInterface exif = new ExifInterface(path);
+
+        //setting up float[] and init with Lat and Lng
+        float[] latLngFloat = new float[2];
+        exif.getLatLong(latLngFloat);
+
+        return latLngFloat;
     }
 
 }

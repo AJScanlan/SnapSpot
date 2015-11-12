@@ -48,7 +48,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         mMap.setOnMarkerClickListener(this);
-        mMap.getUiSettings().setMapToolbarEnabled(false);
+        mMap.getUiSettings().setMapToolbarEnabled(false); //removes the buttons on map (NOT COMPASS)
     }
 
     @Override
@@ -58,7 +58,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.map, ImageFragment.newInstance(null, null, marker.getId()))
+                .replace(R.id.map, ImageFragment.newInstance(marker.getId()))
                 .addToBackStack("")
                 .commit();
 
@@ -70,6 +70,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onFragmentInteraction() {
+        //Finds the OpenCamera button and places it on fragment
         Button cameraButton = (Button) findViewById(R.id.open_camera_button);
         cameraButton.setVisibility(View.VISIBLE);
     }
@@ -90,6 +91,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
             // Continue only if the File was successfully created
             Log.d("LOG_MESSAGE", photoFile == null ? "null" : "not null");
+
             if (photoFile != null) {
                 mCurrentPhotoPath = photoFile.getAbsolutePath();
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(photoFile));
@@ -102,15 +104,22 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
 
-            Random randy = new Random();
 
-            double randLat = -90.0 + (90.0 - (-90.0)) * randy.nextDouble();
-            double randLng = -180.0 + (180.0 - (-180.0)) * randy.nextDouble();
 
-            Log.d("LAT", "Lat is :" + randLat);
-            Log.d("LNG", "Lng is :" + randLng);
+//            Random randy = new Random();
+//
+//            double randLat = -90.0 + (90.0 - (-90.0)) * randy.nextDouble();
+//            double randLng = -180.0 + (180.0 - (-180.0)) * randy.nextDouble();
+//
+//            Log.d("LAT", "Lat is :" + randLat);
+//            Log.d("LNG", "Lng is :" + randLng);
 
-            addMarker(randLat, randLng, mCurrentPhotoPath);
+            try {
+                float[] latLngFloat = ImageManipulator.getLatLngExif(mCurrentPhotoPath);
+                addMarker(latLngFloat[0], latLngFloat[1], mCurrentPhotoPath);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
